@@ -3,7 +3,7 @@ package memory
 import (
 	"sync"
 
-	. "github.com/ory/ladon"
+	. "github.com/d3sw/ladon"
 	"github.com/pkg/errors"
 )
 
