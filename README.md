@@ -6,9 +6,9 @@
 [![Follow GitHub](https://img.shields.io/badge/follow-github-00cc99.svg)](https://github.com/arekkas)
 [![Become a patron!](https://img.shields.io/badge/support%20us-on%20patreon-green.svg)](https://patreon.com/user?u=4298803)
 
-[![Build Status](https://travis-ci.org/ory/ladon.svg?branch=master)](https://travis-ci.org/ory/ladon)
-[![Coverage Status](https://coveralls.io/repos/ory/ladon/badge.svg?branch=master&service=github)](https://coveralls.io/github/ory/ladon?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ory/ladon)](https://goreportcard.com/report/github.com/ory/ladon)
+[![Build Status](https://travis-ci.org/d3sw/ladon.svg?branch=master)](https://travis-ci.org/d3sw/ladon)
+[![Coverage Status](https://coveralls.io/repos/d3sw/ladon/badge.svg?branch=master&service=github)](https://coveralls.io/github/d3sw/ladon?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/d3sw/ladon)](https://goreportcard.com/report/github.com/d3sw/ladon)
 
 [Ladon](https://en.wikipedia.org/wiki/Ladon_%28mythology%29) is the serpent dragon protecting your resources.
 
@@ -59,7 +59,7 @@ Please refer to [ory-am/dockertest](https://github.com/ory-am/dockertest) for mo
 ## Installation
 
 ```
-go get github.com/ory/ladon
+go get github.com/d3sw/ladon
 ```
 
 We recommend to use [Glide](https://github.com/Masterminds/glide) for dependency management. Ladon uses [semantic
@@ -184,7 +184,7 @@ are abstracted as the `ladon.Policy` interface, and Ladon comes with a standard 
 which is `ladon.DefaultPolicy`. Creating such a policy could look like:
 
 ```go
-import "github.com/ory/ladon"
+import "github.com/d3sw/ladon"
 
 var pol = &ladon.DefaultPolicy{
 	// A required unique identifier. Used primarily for database retrieval.
@@ -449,7 +449,7 @@ var err = warden.IsAllowed(&ladon.Request{
 You can add custom conditions by appending it to `ladon.ConditionFactories`:
 
 ```go
-import "github.com/ory/ladon"
+import "github.com/d3sw/ladon"
 
 func main() {
     // ...
@@ -466,7 +466,7 @@ func main() {
 
 Obviously, creating such a policy is not enough. You want to persist it too. Ladon ships an interface `ladon.Manager` for
 this purpose with default implementations for In-Memory and SQL (PostgreSQL, MySQL). There are also adapters available
-written by the community [for Redis and RethinkDB](https://github.com/ory/ladon-community)
+written by the community [for Redis and RethinkDB](https://github.com/d3sw/ladon-community)
 
 Let's take a look how to instantiate those:
 
@@ -474,8 +474,8 @@ Let's take a look how to instantiate those:
 
 ```go
 import (
-	"github.com/ory/ladon"
-	manager "github.com/ory/ladon/manager/memory"
+	"github.com/d3sw/ladon"
+	manager "github.com/d3sw/ladon/manager/memory"
 )
 
 
@@ -492,8 +492,8 @@ func main() {
 **SQL** (officially supported)
 
 ```go
-import "github.com/ory/ladon"
-import manager "github.com/ory/ladon/manager/sql"
+import "github.com/d3sw/ladon"
+import manager "github.com/d3sw/ladon/manager/sql"
 import "database/sql"
 import _ "github.com/go-sql-driver/mysql"
 
@@ -522,7 +522,7 @@ Now that we have defined our policies, we can use the warden to check if a reque
 will return `nil` if the access request can be granted and an error otherwise.
 
 ```go
-import "github.com/ory/ladon"
+import "github.com/d3sw/ladon"
 
 func main() {
     // ...
@@ -585,5 +585,5 @@ Ladon does not use reflection for matching conditions to their appropriate struc
 
 **Create mocks**
 ```sh
-mockgen -package ladon_test -destination manager_mock_test.go github.com/ory/ladon Manager
+mockgen -package ladon_test -destination manager_mock_test.go github.com/d3sw/ladon Manager
 ```

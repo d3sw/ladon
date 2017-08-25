@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/ory/ladon"
-	. "github.com/ory/ladon/manager/memory"
+	. "github.com/d3sw/ladon"
+	. "github.com/d3sw/ladon/manager/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

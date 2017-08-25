@@ -1,4 +1,4 @@
-package: github.com/ory/ladon
+package: github.com/d3sw/ladon
 import:
 - package: github.com/go-sql-driver/mysql
   version: ~1.3.0
