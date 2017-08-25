@@ -2,20 +2,26 @@ package rdb
 
 import (
 	"encoding/json"
+	"strings"
 
 	. "github.com/d3sw/ladon"
-
+	"github.com/d3sw/ladon/compiler"
 	"github.com/pkg/errors"
 )
 
 type schema struct {
 	ID          string          `json:"id" gorethink:"id"`
 	Description string          `json:"description" gorethink:"description"`
-	Subjects    []string        `json:"subjects" gorethink:"subjects"`
+	Subjects    subjects        `json:"subjects" gorethink:"subjects"`
 	Effect      string          `json:"effect" gorethink:"effect"`
 	Resources   []string        `json:"resources" gorethink:"resources"`
 	Actions     []string        `json:"actions" gorethink:"actions"`
 	Conditions  json.RawMessage `json:"conditions" gorethink:"conditions"`
+}
+
+type subjects struct {
+	Raw      []string `json:"subjects" gorethink:"raw"`
+	Compiled string   `json:"subjects" gorethink:"compiled"`
 }
 
 func (s *schema) getPolicy() (*DefaultPolicy, error) {
@@ -29,7 +35,7 @@ func (s *schema) getPolicy() (*DefaultPolicy, error) {
 	return &DefaultPolicy{
 		ID:          s.ID,
 		Description: s.Description,
-		Subjects:    s.Subjects,
+		Subjects:    s.Subjects.Raw,
 		Effect:      s.Effect,
 		Resources:   s.Resources,
 		Actions:     s.Actions,
@@ -44,10 +50,26 @@ func (s *schema) getSchema(p Policy) error {
 	}
 	s.ID = p.GetID()
 	s.Description = p.GetDescription()
-	s.Subjects = p.GetSubjects()
+	s.Subjects.Raw = p.GetSubjects()
+	if err := s.compileSubject(); err != nil {
+		return err
+	}
 	s.Effect = p.GetEffect()
 	s.Resources = p.GetResources()
 	s.Actions = p.GetActions()
 	s.Conditions = cs
+	return nil
+}
+
+func (s *schema) compileSubject() error {
+	csubs := make([]string, len(s.Subjects.Raw))
+	for i, s := range s.Subjects.Raw {
+		if cs, err := compiler.CompileRegex(s, '<', '>'); err != nil {
+			return err
+		} else {
+			csubs[i] = cs.String()
+		}
+	}
+	s.Subjects.Compiled = strings.Join(csubs, "|")
 	return nil
 }
