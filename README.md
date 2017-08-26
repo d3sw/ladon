@@ -1,33 +1,13 @@
-# ![Ladon](https://storage.googleapis.com/ory.am/ory_banners-49.png)
+# d3sw/Ladon
+d3sw/Ladon is based on the [ory/Ladon](https://github.com/ory/ladon) which is a open source library for access management similar to [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
 
-[![Join the chat at https://gitter.im/ory-am/hydra](https://img.shields.io/badge/join-chat-00cc99.svg)](https://gitter.im/ory-am/hydra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Join newsletter](https://img.shields.io/badge/join-newsletter-00cc99.svg)](http://eepurl.com/bKT3N9)
-[![Follow twitter](https://img.shields.io/badge/follow-twitter-00cc99.svg)](https://twitter.com/_aeneasr)
-[![Follow GitHub](https://img.shields.io/badge/follow-github-00cc99.svg)](https://github.com/arekkas)
-[![Become a patron!](https://img.shields.io/badge/support%20us-on%20patreon-green.svg)](https://patreon.com/user?u=4298803)
-
-[![Build Status](https://travis-ci.org/d3sw/ladon.svg?branch=master)](https://travis-ci.org/d3sw/ladon)
-[![Coverage Status](https://coveralls.io/repos/d3sw/ladon/badge.svg?branch=master&service=github)](https://coveralls.io/github/d3sw/ladon?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/d3sw/ladon)](https://goreportcard.com/report/github.com/d3sw/ladon)
-
-[Ladon](https://en.wikipedia.org/wiki/Ladon_%28mythology%29) is the serpent dragon protecting your resources.
-
-Ladon is a library written in [Go](https://golang.org) for access control policies, similar to [Role Based Access Control](https://en.wikipedia.org/wiki/Role-based_access_control)
-or [Access Control Lists](https://en.wikipedia.org/wiki/Access_control_list).
-In contrast to [ACL](https://en.wikipedia.org/wiki/Access_control_list) and [RBAC](https://en.wikipedia.org/wiki/Role-based_access_control)
-you get fine-grained access control with the ability to answer questions in complex environments such as multi-tenant or distributed applications
-and large organizations. Ladon is inspired by [AWS IAM Policies](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html).
-
-Ladon ships with storage adapters for SQL (officially supported: MySQL 5.5+, PostgreSQL 9.2+) and in-memory.
+## Differences from ory/Ladon
+* It includes a storage adapter for [RethinkDB](https://rethinkdb.com).
+* It considers multiple representatives, i.e. username, email, of a subject in the authorization process.
 
 ---
-
-ORY builds solutions for better internet security and accessibility. We have a couple more projects you might enjoy:
-
-* **[Hydra](https://github.com/ory/hydra)**, a security-first open source OAuth2 and OpenID Connect server for new and existing infrastructures that uses Ladon for access control.
-* **[ORY Editor](https://github.com/ory/editor)**, an extensible, modern WYSI editor for the web written in React.
-* **[Fosite](https://github.com/ory/fosite)**, an extensible security first OAuth 2.0 and OpenID Connect SDK for Go.
-* **[Dockertest](https://github.com/ory/dockertest)**: Write better integration tests with dockertest!
+## Services using d3sw/Ladon library
+* [Fuac](https://github.com/d3sw/fuac): a Universal Access Control system meant for any type of application
 
 ---
 
@@ -464,13 +444,9 @@ func main() {
 
 #### Persistence
 
-Obviously, creating such a policy is not enough. You want to persist it too. Ladon ships an interface `ladon.Manager` for
-this purpose with default implementations for In-Memory and SQL (PostgreSQL, MySQL). There are also adapters available
-written by the community [for Redis and RethinkDB](https://github.com/d3sw/ladon-community)
+d3sw/Ladon implements interface `ladon.Manager` for RethinkDB besides the In-Memory option originally provided by ory/Ladon.
 
-Let's take a look how to instantiate those:
-
-**In-Memory** (officially supported)
+**In-Memory**
 
 ```go
 import (
@@ -489,26 +465,25 @@ func main() {
 }
 ```
 
-**SQL** (officially supported)
+**RethinkDB**
 
 ```go
 import "github.com/d3sw/ladon"
-import manager "github.com/d3sw/ladon/manager/sql"
-import "database/sql"
-import _ "github.com/go-sql-driver/mysql"
+import manager "github.com/d3sw/ladon/manager/rdb"
+import r "gopkg.in/gorethink/gorethink.v3"
 
 func main() {
-    db, err = sql.Open("mysql", "user:pass@tcp(127.0.0.1:3306)"")
-    // Or, if using postgres:
-    //  import _ "github.com/lib/pq"
-    //
-    //  db, err = sql.Open("postgres", "postgres://foo:bar@localhost/ladon")
-	if err != nil {
+    var session *r.Session
+	opts := r.ConnectOpts{
+		Address: "127.0.0.1:28015",
+	}
+	session, e := r.Connect(opts)
+	if e != nil {
 		log.Fatalf("Could not connect to database: %s", err)
 	}
 
     warden := ladon.Ladon{
-        Manager: manager.NewSQLManager(db, nil),
+        Manager: manager.NewRdbManager(session, "policies"),
     }
 
     // ...
@@ -541,34 +516,6 @@ func main() {
     // ...
 }
 ```
-
-## Limitations
-
-Ladon's limitations are listed here.
-
-### Regular expressions
-
-Matching regular expressions has a complexity of `O(n)` and databases such as MySQL or Postgres can not
-leverage indexes when parsing regular expressions. Thus, there is considerable overhead when using regular
-expressions.
-
-We have implemented various strategies for reducing policy matching time:
-
-1. An LRU cache is used for caching frequently compiled regular expressions. This reduces cpu complexity
-significantly for memory manager implementations.
-2. The SQL schema is 3NF normalized.
-3. Policies, subjects and actions are stored uniquely, reducing the total number of rows.
-4. Only one query per look up is executed.
-5. If no regular expression is used, a simple equal match is done in SQL back-ends.
-
-You will get the best performance with the in-memory manager. The SQL adapters perform about
-1000:1 compared to the in-memory solution. Please note that these
-tests where in laboratory environments with Docker, without an SSD, and single-threaded. You might get better
-results on your system. We are thinking about introducing It would be possible a simple cache strategy such as
-LRU with a maximum age to further reduce runtime complexity.
-
-We are also considering to offer different matching strategies (e.g. wildcard match) in the future, which will perform better
-with SQL databases. If you have ideas or suggestions, leave us an issue.
 
 ## Examples
 
