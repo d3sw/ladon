@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/ory/ladon/compiler"
+	"github.com/d3sw/ladon/compiler"
 	"github.com/pkg/errors"
 )
 

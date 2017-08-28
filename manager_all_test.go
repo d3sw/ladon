@@ -5,10 +5,10 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/ory/ladon"
-	"github.com/ory/ladon/integration"
-	. "github.com/ory/ladon/manager/memory"
-	//	. "github.com/ory/ladon/manager/sql"
+	. "github.com/d3sw/ladon"
+	"github.com/d3sw/ladon/integration"
+	. "github.com/d3sw/ladon/manager/memory"
+	//	. "github.com/d3sw/ladon/manager/sql"
 )
 
 var managers = map[string]Manager{}
