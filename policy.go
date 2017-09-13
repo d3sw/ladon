@@ -48,7 +48,15 @@ type Policy interface {
 	GetEndDelimiter() byte
 }
 
+// swagger:response Policies
+type DefaultPolicies struct {
+	// in: body
+	DefaultPolicies []*DefaultPolicy `json:"policies"`
+}
+
 // DefaultPolicy is the default implementation of the policy interface.
+//
+// swagger:model Policy
 type DefaultPolicy struct {
 	ID          string     `json:"id" gorethink:"id"`
 	Description string     `json:"description" gorethink:"description"`

@@ -102,4 +102,10 @@ var ConditionFactories = map[string]func() Condition{
 	new(StringPairsEqualCondition).GetName(): func() Condition {
 		return new(StringPairsEqualCondition)
 	},
+	new(StringMatchCondition).GetName(): func() Condition {
+		return new(StringMatchCondition)
+	},
+	new(JsonBodyMatchCondition).GetName(): func() Condition {
+		return new(JsonBodyMatchCondition)
+	},
 }
