@@ -22,7 +22,7 @@ func TestJsonBodyMatch(t *testing.T) {
 		{matches: "allow", path: ".effect", pass: true},
 		{matches: "deny", path: ".effect", pass: false},
 	} {
-		condition := &JsonBodyMatchCondition{
+		condition := &BodyMatchCondition{
 			Path:    c.path,
 			Matches: c.matches,
 		}
