@@ -1,6 +1,7 @@
 package ladon
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -38,6 +39,7 @@ func (c *BodyArrayMatchCondition) Fulfills(_ interface{}, r *Request) bool {
 		if err != nil {
 			return false
 		}
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 		p := &DefaultPolicy{}
 		reg, err := compiler.CompileRegex(c.Matches, p.GetStartDelimiter(), p.GetEndDelimiter())
 		if err != nil {
