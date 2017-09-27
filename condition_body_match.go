@@ -1,6 +1,7 @@
 package ladon
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -29,6 +30,7 @@ func (c *BodyMatchCondition) Fulfills(_ interface{}, r *Request) bool {
 		if err != nil {
 			return false
 		}
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 		s, err := String(JsonQuery(body, c.Path))
 		if err != nil {
 			return false
