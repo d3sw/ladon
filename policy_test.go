@@ -73,3 +73,26 @@ func RequireError(t *testing.T, expectError bool, err error, args ...interface{}
 	}
 	require.Equal(t, expectError, err != nil)
 }
+
+func Test_writePolicyJson(t *testing.T) {
+	p := &DefaultPolicy{
+		ID:          "1",
+		Description: "description",
+		Subjects:    []string{"user:service-account-{realm}.{service}", "role:{realm}-{service}.admin"},
+		Effect:      AllowAccess,
+		Resources:   []string{"fuac:/policy/{realm}-{service}.<.+>"},
+		Actions:     []string{"<.+>"},
+		Conditions: Conditions{
+			"JsonBodyArrayMatchCondition": &BodyArrayMatchCondition{
+				Mode:    Matchall,
+				Path:    ".subjects",
+				Matches: "{realm}-{service}.<(admin|read|write|delete)>",
+			},
+		},
+	}
+	b, err := json.MarshalIndent(p, " ", "    ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%s\n", string(b))
+}
