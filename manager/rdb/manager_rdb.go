@@ -94,24 +94,64 @@ func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
 	mp := map[string]bool{}
 	var policies Policies
 	for _, s := range req.Subjects {
-		res, err := m.table.Filter(func(t r.Term) r.Term {
-			return r.Expr(s).Match(t.Field("subjects").Field("compiled"))
-		}).Run(m.session)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		defer res.Close()
-		var s schema
-		for res.Next(&s) {
-			if _, ok := mp[s.ID]; !ok {
-				p, err := s.getPolicy()
+		filterResultCh := m.filter(func(t r.Term) r.Term {
+			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled"))
+
+			if req.Resource != "" {
+				tr = tr.And(t.Field("resources").Contains(req.Resource))
+			}
+
+			if req.Action != "" {
+				tr = tr.And(t.Field("actions").Contains(req.Action))
+			}
+
+			return tr
+		})
+
+		for fr := range filterResultCh {
+			if fr.err != nil {
+				return nil, errors.WithStack(fr.err)
+			}
+
+			if _, ok := mp[fr.s.ID]; !ok {
+				p, err := fr.s.getPolicy()
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
-				mp[s.ID] = true
+				mp[fr.s.ID] = true
 				policies = append(policies, p)
 			}
 		}
 	}
 	return policies, nil
+}
+
+type filterFunc func(t r.Term) r.Term
+
+type filterResult struct {
+	s   schema
+	err error
+}
+
+func (m *RdbManager) filter(f filterFunc) chan *filterResult {
+	ch := make(chan *filterResult)
+
+	go func() {
+		defer close(ch)
+		res, err := m.table.Filter(f).Run(m.session)
+		if err != nil {
+			ch <- &filterResult{err: err}
+			return
+		}
+		defer res.Close()
+
+		var s schema
+		for res.Next(&s) {
+			ch <- &filterResult{
+				s: s,
+			}
+		}
+	}()
+
+	return ch
 }
