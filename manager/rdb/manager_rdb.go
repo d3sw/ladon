@@ -93,17 +93,15 @@ func (m *RdbManager) GetAll(limit, offset int64) (Policies, error) {
 func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
 	mp := map[string]bool{}
 	var policies Policies
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
 	for _, s := range req.Subjects {
 		filterResultCh := m.filter(func(t r.Term) r.Term {
-			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled"))
-
-			if req.Resource != "" {
-				tr = tr.And(t.Field("resources").Contains(req.Resource))
-			}
-
-			if req.Action != "" {
-				tr = tr.And(t.Field("actions").Contains(req.Action))
-			}
+			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled")).
+				And(t.Field("resources").Contains(req.Resource)).
+				And(t.Field("actions").Contains(req.Action))
 
 			return tr
 		})

@@ -1,5 +1,7 @@
 package ladon
 
+import "errors"
+
 const (
 	KeyRawRequest = "http-request"
 )
@@ -17,6 +19,23 @@ type Request struct {
 
 	// Context is the request's environmental context.
 	Context Context `json:"context"`
+}
+
+// Validate validates request is formatted correctly
+func (r *Request) Validate() error {
+	if r.Resource == "" {
+		return errors.New("missing resource")
+	}
+
+	if r.Action == "" {
+		return errors.New("missing actions")
+	}
+
+	if len(r.Subjects) == 0 {
+		return errors.New("missing subjects")
+	}
+
+	return nil
 }
 
 // Warden is responsible for deciding if subject s can perform action a on resource r with context c.

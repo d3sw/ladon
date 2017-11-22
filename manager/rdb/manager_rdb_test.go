@@ -9,6 +9,34 @@ import (
 	r "gopkg.in/gorethink/gorethink.v3"
 )
 
+func Benchmark_FindRequestCandidates(b *testing.B) {
+	var session *r.Session
+	copts := r.ConnectOpts{
+		Address:  "fuac-db-http.service.owf-dev:28015",
+		Password: "Deluxe123!",
+	}
+	session, err := r.Connect(copts)
+	if err != nil {
+		b.Fatal(err)
+	}
+	m := NewRdbManager(session, "policies")
+
+	req := &Request{
+		Subjects: []string{"fuac"},
+		Resource: "fuac:<.*>/policy/<.*>",
+		Action:   "POST",
+	}
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		_, err := m.FindRequestCandidates(req)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func Test_FindRequestCandidates(t *testing.T) {
 	t.Skip("Test_FindRequestCandidates should only be enabled with a running fuac db")
 	var session *r.Session
