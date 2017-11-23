@@ -101,11 +101,11 @@ func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
 		filterResultCh := m.filter(func(t r.Term) r.Term {
 			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled")).
 				And(
-					r.Expr(s).Match(t.Field("resources").Field("compiled")),
-				).
+				r.Expr(s).Match(t.Field("resources").Field("compiled")),
+			).
 				And(
-					r.Expr(s).Match(t.Field("actions").Field("compiled")),
-				)
+				r.Expr(s).Match(t.Field("actions").Field("compiled")),
+			)
 
 			return tr
 		})

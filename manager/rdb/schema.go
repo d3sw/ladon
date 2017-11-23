@@ -14,8 +14,8 @@ type schema struct {
 	Description string          `json:"description" gorethink:"description"`
 	Subjects    subjects        `json:"subjects" gorethink:"subjects"`
 	Effect      string          `json:"effect" gorethink:"effect"`
-	Resources   resources        `json:"resources" gorethink:"resources"`
-	Actions     actions        `json:"actions" gorethink:"actions"`
+	Resources   resources       `json:"resources" gorethink:"resources"`
+	Actions     actions         `json:"actions" gorethink:"actions"`
 	Conditions  json.RawMessage `json:"conditions" gorethink:"conditions"`
 }
 
