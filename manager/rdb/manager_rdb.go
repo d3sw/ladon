@@ -100,8 +100,12 @@ func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
 	for _, s := range req.Subjects {
 		filterResultCh := m.filter(func(t r.Term) r.Term {
 			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled")).
-				And(t.Field("resources").Contains(req.Resource)).
-				And(t.Field("actions").Contains(req.Action))
+				And(
+					r.Expr(s).Match(t.Field("resources").Field("compiled")),
+				).
+				And(
+					r.Expr(s).Match(t.Field("actions").Field("compiled")),
+				)
 
 			return tr
 		})

@@ -10,10 +10,10 @@ import (
 )
 
 func Benchmark_FindRequestCandidates(b *testing.B) {
+	b.Skip("Benchmark_FindRequestCandidates should only be enabled with a running fuac db")
 	var session *r.Session
 	copts := r.ConnectOpts{
 		Address:  "fuac-db-http.service.owf-dev:28015",
-		Password: "Deluxe123!",
 	}
 	session, err := r.Connect(copts)
 	if err != nil {
@@ -63,11 +63,10 @@ func Test_FindRequestCandidates(t *testing.T) {
 }
 
 func Test_FindRequestCandidates_Complex(t *testing.T) {
-	//t.Skip("Test_FindRequestCandidates_Complex should only be enabled with a running fuac db")
+	t.Skip("Test_FindRequestCandidates_Complex should only be enabled with a running fuac db")
 	var session *r.Session
 	copts := r.ConnectOpts{
 		Address:  "fuac-db-http.service.owf-dev:28015",
-		Password: "Deluxe123!",
 	}
 	session, err := r.Connect(copts)
 	if err != nil {
