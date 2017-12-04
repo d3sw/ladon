@@ -1,4 +1,4 @@
-package rdb
+package acl
 
 import (
 	"fmt"
@@ -8,22 +8,22 @@ import (
 	r "gopkg.in/gorethink/gorethink.v3"
 )
 
-// RdbManager is a rethinkdb implementation of Manager to store policies persistently.
-type RdbManager struct {
+// ACLManager is a rethinkdb implementation of Manager to store policies persistently.
+type ACLManager struct {
 	session *r.Session
 	table   r.Term
 }
 
-// NewRdbManager initializes a new RdbManager for given session.
-func NewRdbManager(session *r.Session, table string) *RdbManager {
-	return &RdbManager{
+// NewACLManager initializes a new ACLManager for given session.
+func NewACLManager(session *r.Session, table string) *ACLManager {
+	return &ACLManager{
 		session: session,
 		table:   r.Table(table),
 	}
 }
 
 // Create inserts a new policy.
-func (m *RdbManager) Create(policy Policy) error {
+func (m *ACLManager) Create(policy Policy) error {
 	s := &schema{}
 	s.getSchema(policy)
 	if _, err := m.table.Insert(s).RunWrite(m.session); err != nil {
@@ -33,7 +33,7 @@ func (m *RdbManager) Create(policy Policy) error {
 }
 
 // Update updates an existing policy.
-func (m *RdbManager) Update(policy Policy) error {
+func (m *ACLManager) Update(policy Policy) error {
 	s := &schema{}
 	s.getSchema(policy)
 	if _, err := m.table.Get(s.ID).Update(s).RunWrite(m.session); err != nil {
@@ -43,7 +43,7 @@ func (m *RdbManager) Update(policy Policy) error {
 }
 
 // Get retrieves a policy.
-func (m *RdbManager) Get(id string) (Policy, error) {
+func (m *ACLManager) Get(id string) (Policy, error) {
 	res, err := m.table.Get(id).Run(m.session)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -61,7 +61,7 @@ func (m *RdbManager) Get(id string) (Policy, error) {
 }
 
 // Delete removes a policy.
-func (m *RdbManager) Delete(id string) error {
+func (m *ACLManager) Delete(id string) error {
 	if _, err := m.table.Get(id).Delete().RunWrite(m.session); err != nil {
 		return errors.WithStack(err)
 	}
@@ -69,7 +69,7 @@ func (m *RdbManager) Delete(id string) error {
 }
 
 // GetAll returns all policies.
-func (m *RdbManager) GetAll(limit, offset int64) (Policies, error) {
+func (m *ACLManager) GetAll(limit, offset int64) (Policies, error) {
 	res, err := m.table.Skip(offset).Limit(limit).Run(m.session)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -90,22 +90,18 @@ func (m *RdbManager) GetAll(limit, offset int64) (Policies, error) {
 // FindRequestCandidates returns candidates that could match the request object. It either returns
 // a set that exactly matches the request, or a superset of it. If an error occurs, it returns nil and
 // the error.
-func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
+func (m *ACLManager) FindRequestCandidates(req *Request) (Policies, error) {
 	mp := map[string]bool{}
 	var policies Policies
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
+	//if err := req.Validate(); err != nil {
+	//	return nil, err
+	//}
 
 	for _, s := range req.Subjects {
 		filterResultCh := m.filter(func(t r.Term) r.Term {
-			tr := r.Expr(s).Match(t.Field("subjects").Field("compiled")).
-				And(
-					r.Expr(req.Resource).Match(t.Field("resources").Field("compiled")),
-				).
-				And(
-					r.Expr(req.Action).Match(t.Field("actions").Field("compiled")),
-				)
+			tr := t.Field("subject").Match(s).
+				And(t.Field("resource").Match(req.Resource)).
+				And(t.Field("action").Match(req.Action))
 
 			return tr
 		})
@@ -135,7 +131,7 @@ type filterResult struct {
 	err error
 }
 
-func (m *RdbManager) filter(f filterFunc) chan *filterResult {
+func (m *ACLManager) filter(f filterFunc) chan *filterResult {
 	ch := make(chan *filterResult)
 
 	go func() {
