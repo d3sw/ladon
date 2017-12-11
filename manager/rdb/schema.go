@@ -7,9 +7,34 @@ import (
 	. "github.com/d3sw/ladon"
 	"github.com/d3sw/ladon/compiler"
 	"github.com/pkg/errors"
+	r "gopkg.in/gorethink/gorethink.v3"
 )
 
-type schema struct {
+type ProcessResult struct {
+	Schema Schema
+	Err    error
+}
+
+type DBResult interface {
+	Next(dest interface{}) bool
+	Err() error
+}
+
+type SchemaManager interface {
+	NewSchema() Schema
+	GetFilterFunc(subject, resource, action string) FilterFunc
+	ProcessResult(r DBResult) chan *ProcessResult
+}
+
+type Schema interface {
+	GetID() string
+	GetPolicy() (Policy, error)
+	PopulateWithPolicy(Policy) error
+}
+
+// TODO: Everything what is below to move outside to place where it's used
+
+type PolicySchema struct {
 	ID          string          `json:"id" gorethink:"id"`
 	Description string          `json:"description" gorethink:"description"`
 	Subjects    subjects        `json:"subjects" gorethink:"subjects"`
@@ -34,14 +59,17 @@ type actions struct {
 	Compiled string   `json:"actions" gorethink:"compiled"`
 }
 
-func (s *schema) getPolicy() (*DefaultPolicy, error) {
-	if s == nil {
-		return nil, nil
-	}
+func (s *PolicySchema) GetID() string {
+	return s.ID
+}
+
+func (s *PolicySchema) GetPolicy() (Policy, error) {
 	cs := Conditions{}
+
 	if err := cs.UnmarshalJSON(s.Conditions); err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return &DefaultPolicy{
 		ID:          s.ID,
 		Description: s.Description,
@@ -53,7 +81,7 @@ func (s *schema) getPolicy() (*DefaultPolicy, error) {
 	}, nil
 }
 
-func (s *schema) getSchema(p Policy) error {
+func (s *PolicySchema) PopulateWithPolicy(p Policy) error {
 	cs, err := p.GetConditions().MarshalJSON()
 	if err != nil {
 		return err
@@ -74,10 +102,11 @@ func (s *schema) getSchema(p Policy) error {
 	}
 	s.Effect = p.GetEffect()
 	s.Conditions = cs
+
 	return nil
 }
 
-func (s *schema) compileSubject() error {
+func (s *PolicySchema) compileSubject() error {
 	res, err := compile(s.Subjects.Raw)
 	if err != nil {
 		return err
@@ -86,7 +115,7 @@ func (s *schema) compileSubject() error {
 	return nil
 }
 
-func (s *schema) compileResources() error {
+func (s *PolicySchema) compileResources() error {
 	res, err := compile(s.Resources.Raw)
 	if err != nil {
 		return err
@@ -95,7 +124,7 @@ func (s *schema) compileResources() error {
 	return nil
 }
 
-func (s *schema) compileActions() error {
+func (s *PolicySchema) compileActions() error {
 	res, err := compile(s.Actions.Raw)
 	if err != nil {
 		return err
@@ -114,4 +143,49 @@ func compile(s []string) (string, error) {
 		}
 	}
 	return strings.Join(csubs, "|"), nil
+}
+
+type PolicySchemaManager struct{}
+
+func (_ *PolicySchemaManager) NewSchema() Schema {
+	return &PolicySchema{}
+}
+
+func (_ *PolicySchemaManager) GetFilterFunc(sbj, res, act string) FilterFunc {
+	return func(t r.Term) r.Term {
+		tr := r.Expr(sbj).Match(t.Field("subjects").Field("compiled")).
+			And(
+				r.Expr(res).Match(t.Field("resources").Field("compiled")),
+			).
+			And(
+				r.Expr(act).Match(t.Field("actions").Field("compiled")),
+			)
+
+		return tr
+	}
+}
+
+func (_ *PolicySchemaManager) ProcessResult(r DBResult) chan *ProcessResult {
+	schemaCh := make(chan *ProcessResult)
+
+	go func() {
+		var sc *PolicySchema
+		defer close(schemaCh)
+
+		for r.Next(&sc) {
+			schemaCh <- &ProcessResult{
+				Schema: sc,
+				Err:    r.Err(),
+			}
+		}
+
+		if err := r.Err(); err != nil {
+			schemaCh <- &ProcessResult{
+				Schema: nil,
+				Err:    r.Err(),
+			}
+		}
+	}()
+
+	return schemaCh
 }
