@@ -19,7 +19,8 @@ func Benchmark_FindRequestCandidates(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	m := NewRdbManager(session, "policies")
+
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
 
 	req := &Request{
 		Subjects: []string{"fuac"},
@@ -47,14 +48,17 @@ func Test_FindRequestCandidates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := NewRdbManager(session, "policies")
+
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
 
 	req := &Request{
 		Subjects: []string{"root"},
+		Resource: "fuac",
+		Action: "POST",
 	}
 	cands, err := m.FindRequestCandidates(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	for _, c := range cands {
@@ -72,7 +76,8 @@ func Test_FindRequestCandidates_Complex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := NewRdbManager(session, "policies")
+
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
 
 	req := &Request{
 		Subjects: []string{"fuac"},
@@ -114,14 +119,14 @@ func Test_FilterPolicies(t *testing.T) {
 		Actions:     []string{"GET"},
 		Conditions:  Conditions{},
 	}
-	var s schema
-	err = s.getSchema(&p)
+	var s PolicySchema
+	err = s.PopulateWithPolicy(&p)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fmt.Printf("compiled subject is %s\n", s.Subjects.Compiled)
-	tdata := []schema{s}
+	tdata := []PolicySchema{s}
 	res, err := r.Expr(tdata).Filter(func(item r.Term) r.Term {
 		//return r.Expr("aaa").Match(r.Expr("(?i)").Add(item.Field("subjects").Field("compiled")))
 		return r.Expr("xyz").Match(item.Field("subjects").Field("compiled")) //case sensitive
@@ -130,7 +135,7 @@ func Test_FilterPolicies(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer res.Close()
-	var s_ schema
+	var s_ PolicySchema
 	if err = res.One(&s_); err != nil {
 		t.Fatal(err)
 	}
