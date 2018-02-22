@@ -23,7 +23,7 @@ type DBResult interface {
 type SchemaManager interface {
 	NewSchema() Schema
 	GetFilterFunc(subject, resource, action string) FilterFunc
-	GetRequestCandidatesTerm(subject, resource, action string) r.Term
+	GetRequestCandidatesTerm(table r.Term, subject, resource, action string) r.Term
 	ProcessResult(r DBResult) chan *ProcessResult
 }
 
@@ -146,9 +146,7 @@ func compile(s []string) (string, error) {
 	return strings.Join(csubs, "|"), nil
 }
 
-type PolicySchemaManager struct {
-	table r.Term
-}
+type PolicySchemaManager struct {}
 
 func (_ *PolicySchemaManager) NewSchema() Schema {
 	return &PolicySchema{}
@@ -169,8 +167,8 @@ func (_ *PolicySchemaManager) GetFilterFunc(sbj, res, act string) FilterFunc {
 }
 
 // GetRequestCandidates term returns term to provide getRequestCandidates ability
-func (sm *PolicySchemaManager) GetRequestCandidatesTerm(sbj, res, act string) r.Term {
-	return sm.table.Filter(sm.GetFilterFunc(sbj, res, act))
+func (sm *PolicySchemaManager) GetRequestCandidatesTerm(table r.Term, sbj, res, act string) r.Term {
+	return table.Filter(sm.GetFilterFunc(sbj, res, act))
 }
 
 func (_ *PolicySchemaManager) ProcessResult(r DBResult) chan *ProcessResult {

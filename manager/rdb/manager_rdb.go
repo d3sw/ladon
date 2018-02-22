@@ -115,7 +115,7 @@ func (m *RdbManager) FindRequestCandidates(req *Request) (Policies, error) {
 	}
 
 	for _, s := range req.Subjects {
-		res, err := m.s.GetRequestCandidatesTerm(s, req.Resource, req.Action).Run(m.session)
+		res, err := m.s.GetRequestCandidatesTerm(m.table, s, req.Resource, req.Action).Run(m.session)
 		if err != nil {
 			return nil, err
 		}
