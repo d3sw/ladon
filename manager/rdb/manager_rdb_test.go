@@ -20,7 +20,7 @@ func Benchmark_FindRequestCandidates(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{r.Table("policies")})
 
 	req := &Request{
 		Subjects: []string{"fuac"},
@@ -49,7 +49,7 @@ func Test_FindRequestCandidates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{r.Table("policies")})
 
 	req := &Request{
 		Subjects: []string{"root"},
@@ -77,7 +77,7 @@ func Test_FindRequestCandidates_Complex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m := NewRdbManager(session, "policies", &PolicySchemaManager{})
+	m := NewRdbManager(session, "policies", &PolicySchemaManager{r.Table("policies")})
 
 	req := &Request{
 		Subjects: []string{"fuac"},
