@@ -101,6 +101,7 @@ func Test_FindRequestCandidates_Complex(t *testing.T) {
 }
 
 func Test_FilterPolicies(t *testing.T) {
+	t.Skip("Test_FilterPolicies should only be enabled with a running fuac db")
 	var session *r.Session
 	copts := r.ConnectOpts{
 		Address: "fuac-db-http.service.owf-dev:28015",
