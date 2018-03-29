@@ -232,8 +232,97 @@ func (p *DefaultPolicy) ValidateEffect() error {
 	return nil
 }
 
-func (p *DefaultPolicy) CheckID() (string, string, error) {
-	id := p.GetID()
+// swagger:response ACLs
+type ACLs struct {
+	// in: body
+	ACLs []*ACL `json:"acls"`
+}
+
+// ACL is the default implementation of the acl policy interface.
+//
+// swagger:model ACL
+type ACL struct {
+	ID          string     `json:"id" gorethink:"id"`
+	Description string     `json:"description" gorethink:"description"`
+	Subjects    []string   `json:"subjects" gorethink:"subjects"`
+	Effect      string     `json:"effect" gorethink:"effect"`
+	Resource    string     `json:"resource" gorethink:"resources"`
+	Action      string     `json:"action" gorethink:"actions"`
+	Conditions  Conditions `json:"conditions" gorethink:"conditions"`
+}
+
+// UnmarshalJSON overwrite own policy with values of the given in policy in JSON format
+func (p *ACL) UnmarshalJSON(data []byte) error {
+	var pol = struct {
+		ID          string     `json:"id" gorethink:"id"`
+		Description string     `json:"description" gorethink:"description"`
+		Subjects    []string   `json:"subjects" gorethink:"subjects"`
+		Effect      string     `json:"effect" gorethink:"effect"`
+		Resource    string     `json:"resource" gorethink:"resources"`
+		Action      string     `json:"action" gorethink:"actions"`
+		Conditions  Conditions `json:"conditions" gorethink:"conditions"`
+	}{
+		Conditions: Conditions{},
+	}
+
+	if err := json.Unmarshal(data, &pol); err != nil {
+		return errors.WithStack(err)
+	}
+
+	*p = *&ACL{
+		ID:          pol.ID,
+		Description: pol.Description,
+		Subjects:    pol.Subjects,
+		Effect:      pol.Effect,
+		Resource:    pol.Resource,
+		Action:      pol.Action,
+		Conditions:  pol.Conditions,
+	}
+	return nil
+}
+
+func (p *ACL) GetID() string {
+	return p.ID
+}
+
+func (p *ACL) GetDescription() string {
+	return p.Description
+}
+
+func (p *ACL) GetSubjects() []string {
+	return p.Subjects
+}
+
+func (p *ACL) AllowAccess() bool {
+	return p.Effect == AllowAccess
+}
+
+func (p *ACL) GetEffect() string {
+	return p.Effect
+}
+
+func (p *ACL) GetResources() []string {
+	return []string{p.Resource}
+}
+
+func (p *ACL) GetActions() []string {
+	return []string{p.Action}
+}
+
+func (p *ACL) GetConditions() Conditions {
+	return p.Conditions
+}
+
+func (p *ACL) GetStartDelimiter() byte {
+	return '<'
+
+}
+
+func (p *ACL) GetEndDelimiter() byte {
+	return '>'
+}
+
+func CheckID(id string) (string, string, error) {
 	parts := strings.Split(id, ".")
 	if len(parts) < 2 {
 		return "", "", errors.New("invalid id format")
