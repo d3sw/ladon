@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"sort"
 	"sync"
 
 	. "github.com/d3sw/ladon"
@@ -30,19 +31,31 @@ func (m *MemoryManager) Update(policy Policy) error {
 
 // GetAll returns all policies.
 func (m *MemoryManager) GetAll(limit, offset int64) (Policies, error) {
-	ps := make(Policies, len(m.Policies))
+	l := len(m.Policies)
+	max := limit + offset
+	if max > int64(l) {
+		max = int64(l)
+	}
+
+	ps := make(Policies, l)
+
+	keys := make([]string, 0, l)
+	for k := range m.Policies {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	i := 0
-	for _, p := range m.Policies {
-		ps[i] = p
+	for _, key := range keys {
+		v, _ := m.Policies[key]
+		ps[i] = v
 		i++
+		if i > max {
+			break
+		}
 	}
 
-	if offset+limit > int64(len(m.Policies)) {
-		limit = int64(len(m.Policies))
-		offset = 0
-	}
-
-	return ps[offset:limit], nil
+	return ps[offset:], nil
 }
 
 // Create a new pollicy to MemoryManager.
